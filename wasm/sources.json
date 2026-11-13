@@ -1,0 +1,5 @@
+{
+  "bibmd": { "repo": "https://github.com/relu24/bibmd", "commit": "18d7afc4389e04a6dde9ef6d191a4d97a3f9442d" },
+  "bibdoc": { "repo": "https://github.com/relu24/bibdoc", "commit": "028d80b44c3fc9ae48edd9edd865e0d0bdfe09ca" },
+  "bibui": { "repo": "https://github.com/relu24/bibui", "commit": "73e426ba6ba2cb48d1647457390446c2e2231443" }
+}

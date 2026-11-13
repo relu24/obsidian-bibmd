@@ -1,0 +1,16 @@
+/* bib blocks, drawn by bibmd on a canvas: as wide as the note, as tall as the block says. */
+.block-language-bib.bib-block { margin: 0.6em 0; }
+.bib-canvas { display: block; width: 100%; height: 40px; cursor: default; }
+/* bibui leaves the arrow to the page; inside the editor the page says text. */
+
+/* A bib data block is YAML added to the note's data, and draws nothing. */
+.block-language-bib.bib-data-block { display: none; }
+
+.bib-problem {
+  padding: 10px;
+  border: 1px solid var(--color-red);
+  border-radius: 6px;
+  color: var(--color-red);
+  font-family: var(--font-monospace);
+  font-size: 0.875em;
+}

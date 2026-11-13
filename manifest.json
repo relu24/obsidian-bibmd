@@ -1,0 +1,10 @@
+{
+  "id": "bib-blocks",
+  "name": "bib blocks",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Draws fenced bib blocks live with bibmd: small programs over the note's data, shown as sliders, choices, cards, tables and charts.",
+  "author": "Daniel Madsen",
+  "authorUrl": "https://github.com/relu24",
+  "isDesktopOnly": true
+}

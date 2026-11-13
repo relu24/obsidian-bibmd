@@ -1,0 +1,10 @@
+node_modules/
+main.js
+preview/out/
+*.map
+vault/
+wasm/out/
+wasm/bin/
+wasm/obj/
+wasm/sources/
+dist/

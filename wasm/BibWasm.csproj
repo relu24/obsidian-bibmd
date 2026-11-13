@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <!-- bibmd's own Bib.cs, over bibdoc's C# interpreter, drawn by bibui on a <canvas>
+       (Bibui.Platform.Browser, managed rasterizer). The Obsidian plugin loads the published
+       _framework and opens a canvas for each bib block.
+       Needs the wasm-tools workload (dotnet workload install wasm-tools) and the sources
+       fetch-sources.sh checks out. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>bibwasm</AssemblyName>
+    <RootNamespace>BibMd</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- What it is built from: wasm/sources, which fetch-sources.sh fills at the commits
+         sources.json pins. -p:BibmdSource=… and the others build from other checkouts. -->
+    <BibmdSource Condition="'$(BibmdSource)' == ''">$(MSBuildThisFileDirectory)sources/bibmd/src/</BibmdSource>
+    <BibuiSource Condition="'$(BibuiSource)' == ''">$(MSBuildThisFileDirectory)sources/bibui/</BibuiSource>
+    <BibDocSource Condition="'$(BibDocSource)' == ''">$(MSBuildThisFileDirectory)sources/bibdoc/src/BibDoc/</BibDocSource>
+    <!-- FreeType and HarfBuzz for the browser, built by bibui-platform-browser/native/build.sh. -->
+    <BibuiNativeLib Condition="'$(BibuiNativeLib)' == ''">$(BibuiSource)bibui-platform-browser/native/lib/</BibuiNativeLib>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <!-- The checkouts it builds from sit beside it: only the files named below are its own. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);sources/**;out/**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(BibmdSource)Bib.cs" Link="bibmd/Bib.cs" />
+    <Compile Include="$(BibmdSource)Blocks.cs" Link="bibmd/Blocks.cs" />
+    <Compile Include="$(BibmdSource)Document.cs" Link="bibmd/Document.cs" />
+    <Compile Include="$(BibmdSource)Text.cs" Link="bibmd/Text.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(BibDocSource)BibDoc.csproj" />
+    <ProjectReference Include="$(BibuiSource)bibui-core/bibui-core.csproj" />
+    <ProjectReference Include="$(BibuiSource)bibui-platform-browser/bibui-platform-browser.csproj" />
+    <ProjectReference Include="$(BibuiSource)bibui-raster-managed/backend/Bibui.Raster.Managed.Backend.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <BibuiBrowserNativeDir>$(BibuiNativeLib)</BibuiBrowserNativeDir>
+  </PropertyGroup>
+  <Import Project="$(BibuiSource)bibui-platform-browser/buildTransitive/Bibui.Platform.Browser.targets" />
+</Project>
