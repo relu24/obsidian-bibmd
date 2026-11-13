@@ -1,6 +1,5 @@
 import { MarkdownRenderChild, Plugin, TFile, debounce, type MarkdownPostProcessorContext } from "obsidian";
 import { scan, type Scan } from "./scan.ts";
-import { ensureRuntime } from "./install.ts";
 import { openBlock, updateNote, type Block } from "./wasm.ts";
 
 /** A note with bib blocks on screen: its text as last read, where its blocks are, and their views. */
@@ -33,16 +32,14 @@ class BlockView extends MarkdownRenderChild {
   private readonly note: Note;
   private readonly source: string;
   private readonly ctx: MarkdownPostProcessorContext;
-  private readonly plugin: BibPlugin;
   private block: Promise<Block | null> | null = null;
   private shown = -1;
 
-  constructor(el: HTMLElement, plugin: BibPlugin, note: Note, source: string, ctx: MarkdownPostProcessorContext) {
+  constructor(el: HTMLElement, note: Note, source: string, ctx: MarkdownPostProcessorContext) {
     super(el);
     this.note = note;
     this.source = source;
     this.ctx = ctx;
-    this.plugin = plugin;
   }
 
   onload() {
@@ -92,13 +89,11 @@ class BlockView extends MarkdownRenderChild {
     el.addClass("bib-block");
     el.empty();
     const canvas = el.createEl("canvas", { cls: "bib-canvas" });
-    const { app, manifest } = this.plugin;
-    this.block = ensureRuntime(app, manifest)
-      // The .NET app's URL, read once it is there: its ?timestamp is the file's, so a new version
-      // is a new URL, which the window's module cache has not seen.
-      .then(() => openBlock(app.vault.adapter.getResourcePath(`${manifest.dir}/_framework/dotnet.js`),
-        canvas, this.note.path, this.note.text, at))
-      .catch(e => { el.createDiv({ cls: "bib-problem", text: `bibmd could not draw this block: ${e?.message ?? e}` }); return null; });
+    this.block = openBlock(canvas, this.note.path, this.note.text, at)
+      .catch((e: unknown) => {
+        el.createDiv({ cls: "bib-problem", text: `bibmd could not draw this block: ${e instanceof Error ? e.message : String(e)}` });
+        return null;
+      });
   }
 }
 
@@ -115,7 +110,7 @@ export default class BibPlugin extends Plugin {
         text = file instanceof TFile ? await this.app.vault.cachedRead(file) : source;
       }
       note.update(text);
-      ctx.addChild(new BlockView(el, this, note, source, ctx));
+      ctx.addChild(new BlockView(el, note, source, ctx));
     });
 
     // Typing in the editor: the blocks Obsidian does not draw again (the ones not touched, and

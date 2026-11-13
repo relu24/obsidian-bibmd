@@ -29,52 +29,49 @@ for s in data.suppliers { stat(s.name, s.price * units, unit: "EUR") }
 
 Desktop only.
 
-## What it downloads
+## What it uses
 
-The plugin's own files are small; bibmd and the .NET runtime it runs on are not (about 7 MB).
-The first time a note with a `bib` block is opened, the plugin fetches `bibmd-wasm.zip` (3.0 MB)
-from this repository's release for its version, checks it against the SHA-256 the plugin was
-built with, and unpacks it into its folder (`.obsidian/plugins/bibmd/`). A file that does
-not match is refused. Nothing else is fetched, and nothing is sent anywhere.
-
-On Linux the plugin reads the note's font files through fontconfig (`fc-match`), so the blocks
-are set in the same font as the note; elsewhere bibui's own font is used.
+- **Network:** none. bibmd and the .NET runtime it runs on are inside `main.js` (about 4 MB),
+  and are unpacked in memory when a note with a `bib` block is first opened. The plugin
+  downloads nothing, installs nothing and sends nothing anywhere.
+- **Files outside the vault:** on Linux, so the blocks are set in the same font as the note, the
+  plugin runs fontconfig's `fc-list` and `fc-match` to find the note's font, and reads that
+  font's files (for example `/usr/share/fonts/…/LiberationSans-Regular.ttf`). Nothing else
+  outside the vault is read, and nothing outside it is written. Without fontconfig, bibui's own
+  font is used.
 
 ## Building it
 
-The plugin (`main.js`):
+With the .NET 10 SDK and its `wasm-tools` workload (`dotnet workload install wasm-tools`):
 
     npm install
-    npm run build
+    wasm/fetch-sources.sh    # bibmd, bibdoc and bibui at the commits wasm/sources.json pins,
+                             # and bibui's FreeType and HarfBuzz for the browser
+    npm run wasm             # the .NET app, in wasm/out
+    npm run package          # it and its licences as dist/bibmd-wasm.zip
+    npm run build            # main.js: the plugin, .NET's loader and that zip
+    npm run lint             # Obsidian's own lint rules
 
-The .NET app (`bibmd-wasm.zip`), from the commits `wasm/sources.json` pins, with the .NET 10
-SDK and its `wasm-tools` workload (`dotnet workload install wasm-tools`):
+The build is deterministic: the same sources give the same `main.js`, so a release can be
+checked against one built here. `wasm/patch-node.mjs` (part of `npm run wasm`) makes .NET's
+loader treat Obsidian, which is Electron with Node in it, as the browser it is, and gives the
+modules it runs from memory an address to resolve relative paths on.
 
-    wasm/fetch-sources.sh    # bibmd, bibdoc and bibui at the pinned commits, and bibui's
-                             # FreeType and HarfBuzz for the browser
-    npm run wasm             # wasm/out
-    npm run package          # dist/bibmd-wasm.zip and its SHA-256
-    npm run build            # main.js, with that SHA-256 in it
-
-The build is deterministic: the same sources give the same zip, so a release's
-`bibmd-wasm.zip` can be checked against one built here. `wasm/patch-node.mjs` (part of
-`npm run wasm`) makes .NET's loader treat Obsidian, which is Electron with Node in it, as the
-browser it is.
-
-To try a build in a vault without a release, `./install.sh <vault>` copies the plugin and the
-.NET app into `<vault>/.obsidian/plugins/bibmd/`.
+To try a build in a vault, `./install.sh <vault>` copies it into
+`<vault>/.obsidian/plugins/bibmd/`.
 
 ## How it works
 
 - `src/main.ts` registers the `bib` code block processor; `src/scan.ts` finds a note's blocks.
-- `src/install.ts` fetches and checks the .NET app; `src/wasm.ts` loads it once, gives each
-  block a canvas, and reads the theme (colours, font, control sizes) from Obsidian's CSS
-  variables.
+- `src/wasm.ts` unpacks the .NET app in memory and starts it once, handing .NET's loader each file
+  it asks for; it gives each block a canvas, and reads the theme (colours, font, control sizes)
+  from Obsidian's CSS variables.
 - `wasm/` is the .NET app: bibmd's `Bib.cs`, `Document.cs`, `Blocks.cs` and `Text.cs`, compiled
   as they are, with bibdoc's interpreter and bibui's browser platform. Every block of a note
   draws from one program.
 
 ## License
 
-MIT (`LICENSE`). bibmd and bibdoc are MIT; bibui is Apache-2.0; FreeType (FTL) and HarfBuzz
-(MIT) are linked into the .NET app, and their licences are in the zip.
+MIT (`LICENSE`). Inside `main.js`: bibmd and bibdoc (MIT), bibui (Apache-2.0, with its NOTICE),
+the .NET runtime (MIT), FreeType (FTL) and HarfBuzz (MIT); their licence texts are in the
+embedded zip's `licenses/` folder, and at the links above.

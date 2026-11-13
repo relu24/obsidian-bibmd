@@ -43,6 +43,16 @@ public static partial class BibCanvas
     private static int _next, _files;
 
     /// <summary>
+    /// bibui's browser module, from <paramref name="url"/> (the page's, made from the plugin's own
+    /// bytes): imported under the name bibui imports it by, so bibui's own import finds it there.
+    /// </summary>
+    [JSExport]
+    public static Task Preload(string url) => JSHost.ImportAsync(BrowserModule, url);
+
+    // The name bibui's browser platform imports its module under (BrowserInterop.ModuleName).
+    private const string BrowserModule = "Bibui.Platform.Browser";
+
+    /// <summary>
     /// A font the page read from the system, as base64: registered under
     /// <paramref name="family"/>, which a theme's fonts then name.
     /// </summary>

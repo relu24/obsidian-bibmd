@@ -1,9 +1,14 @@
 // bibmd in Obsidian: each bib block drawn by bibmd's own Bib.cs with bibui, on a <canvas>, from
-// the .NET WebAssembly app in wasm/ (published into the plugin's _framework folder). The .NET
-// runtime is loaded once, the first time a note asks for it; all the blocks of a note are one
-// program there.
+// the .NET WebAssembly app in wasm/. All of it is inside main.js: .NET's loader bundled as a
+// dependency, and the rest of the app as a zip that is unpacked in memory and handed to the
+// loader file by file. Nothing is downloaded or written. The runtime is started once, the first
+// time a note asks for it; all the blocks of a note are one program there.
+import { dotnet } from "bibmd-dotnet";
+import zip from "bibmd-wasm-zip";
+import { unzipSync } from "fflate";
 
 interface Bibmd {
+  Preload(url: string): Promise<void>;
   Open(canvas: HTMLCanvasElement, note: string, text: string, block: number, theme: string): Promise<number>;
   Update(note: string, text: string): void;
   Show(id: number, block: number): void;
@@ -14,18 +19,33 @@ interface Bibmd {
 let loading: Promise<Bibmd> | null = null;
 
 // What the .NET side calls back: a block's height, and its first frame (nothing waits for it).
-(globalThis as Record<string, unknown>).bibCanvas = {
+(window as unknown as { bibCanvas: unknown }).bibCanvas = {
   height(canvas: HTMLCanvasElement, px: number) { canvas.style.height = `${px}px`; },
   drawn() {},
 };
 
-function load(dotnetUrl: string): Promise<Bibmd> {
+// A copy of a file's bytes as an ArrayBuffer of its own, for Blob and Response.
+const own = (bytes: Uint8Array) => bytes.slice().buffer;
+
+function load(): Promise<Bibmd> {
   loading ??= (async () => {
-    const { dotnet } = await import(dotnetUrl);
-    const runtime = await dotnet.create();
+    const files = unzipSync(zip);
+    // A JavaScript module of the app, as a URL the page can import: .NET's loader imports its
+    // runtime this way, and bibui its browser module.
+    const moduleUrl = (path: string) => URL.createObjectURL(new Blob([own(files[path])], { type: "text/javascript" }));
+    const runtime = await dotnet.withResourceLoader((type, name) => {
+      const path = name.includes("/") ? name : `_framework/${name}`;
+      const bytes = files[path];
+      if (!bytes) return null;
+      if (type === "dotnetjs") return moduleUrl(path);
+      const kind = name.endsWith(".wasm") ? "application/wasm" : "application/octet-stream";
+      return Promise.resolve(new Response(own(bytes), { headers: { "Content-Type": kind } }));
+    }).create();
     await runtime.runMain();
-    const exports = await runtime.getAssemblyExports("bibwasm.dll");
-    return exports.BibMd.BibCanvas as Bibmd;
+    const exports = await runtime.getAssemblyExports("bibwasm.dll") as { BibMd: { BibCanvas: Bibmd } };
+    const bibmd = exports.BibMd.BibCanvas;
+    await bibmd.Preload(moduleUrl("_content/Bibui.Platform.Browser/bibui-browser.js"));
+    return bibmd;
   })();
   return loading;
 }
@@ -42,8 +62,8 @@ export function updateNote(note: string, text: string) {
 }
 
 /** Opens bibmd on a canvas for the `block`-th bib block of the note at `note` (its path). */
-export async function openBlock(dotnetUrl: string, canvas: HTMLCanvasElement, note: string, text: string, block: number): Promise<Block> {
-  const bibmd = await load(dotnetUrl);
+export async function openBlock(canvas: HTMLCanvasElement, note: string, text: string, block: number): Promise<Block> {
+  const bibmd = await load();
   const theme = { ...hostTheme(canvas), fonts: noteFonts(bibmd, canvas) };
   const id = await bibmd.Open(canvas, note, text, block, JSON.stringify(theme));
   return {
@@ -66,7 +86,7 @@ const registered = new Map<string, string | null>();
 function noteFonts(bibui: Bibmd, at: HTMLElement): { body?: string; mono?: string } {
   const out: { body?: string; mono?: string } = {};
   const body = getComputedStyle(at.parentElement!).fontFamily;
-  const mono = getComputedStyle(document.body).getPropertyValue("--font-monospace");
+  const mono = getComputedStyle(at.doc.body).getPropertyValue("--font-monospace");
   const b = register(bibui, body, "host-body", "sans-serif");
   const m = register(bibui, mono, "host-mono", "monospace");
   if (b) out.body = b;
@@ -81,7 +101,8 @@ function register(bibui: Bibmd, stack: string, name: string, generic: string): s
   try {
     const files = fontFiles(stack, generic);
     if (files.length > 0) {
-      const fs = (window as any).require("fs");
+      const fs = node<typeof import("fs")>("fs");
+      if (!fs) return null;
       family = `${name}-${registered.size}`;
       for (const f of files) bibui.Font(family, fs.readFileSync(f).toString("base64"));
     }
@@ -92,11 +113,17 @@ function register(bibui: Bibmd, stack: string, name: string, generic: string): s
   return family;
 }
 
+// A Node module, on the desktop, where Obsidian has Node; nothing elsewhere.
+function node<T>(name: string): T | null {
+  const require = (window as unknown as { require?: (name: string) => unknown }).require;
+  return require ? require(name) as T : null;
+}
+
 // The files of the first family in a CSS font stack that this system has.
 function fontFiles(stack: string, generic: string): string[] {
-  const cp = (window as any).require?.("child_process");
+  const cp = node<typeof import("child_process")>("child_process");
   if (!cp) return [];
-  const run = (...args: string[]) => cp.execFileSync(args[0], args.slice(1), { encoding: "utf8" }) as string;
+  const run = (...args: string[]) => cp.execFileSync(args[0], args.slice(1), { encoding: "utf8" });
   const has = (family: string) => run("fc-list", `:family=${family}`, "family").trim() !== "";
   const generics: Record<string, string> = { "system-ui": "system-ui", "sans-serif": "sans-serif", serif: "serif", monospace: "monospace" };
   let pattern: string | null = null;
@@ -141,7 +168,7 @@ const ROLES: Record<string, string> = {
 /** The theme as the canvas's place in the note sees it: each role as #RRGGBBAA, and the text size. */
 function hostTheme(at: HTMLElement) {
   const probe = at.parentElement!.createDiv();
-  const ctx = document.createElement("canvas").getContext("2d")!;
+  const ctx = createEl("canvas").getContext("2d")!;
   const colors: Record<string, string> = {};
   // A translucent variable (a hover tint) is mixed onto the background it is drawn on.
   const ground = getComputedStyle(probe).getPropertyValue("--background-primary");
@@ -158,12 +185,12 @@ function hostTheme(at: HTMLElement) {
   }
   const size = parseFloat(getComputedStyle(probe).fontSize) || 16;
   probe.remove();
-  const css = getComputedStyle(document.body);
+  const css = getComputedStyle(at.doc.body);
   const px = (name: string, otherwise: number) => parseFloat(css.getPropertyValue(name)) || otherwise;
   const pointer = css.getPropertyValue("--cursor").trim() === "pointer";
   // Obsidian's controls, by its own variables: a field 30 px tall with 8 px at its sides, and a
   // slider with a plain track and a white thumb.
   const input = { paddingX: px("--size-4-2", 8), paddingY: px("--size-4-1", 4), radius: px("--input-radius", 5) };
   const slider = { grooveHeight: px("--slider-track-height", 4), thumbSize: px("--slider-thumb-height", 18), thumb: "#FFFFFFFF" };
-  return { dark: document.body.classList.contains("theme-dark"), size, colors, pointer, input, slider };
+  return { dark: at.doc.body.classList.contains("theme-dark"), size, colors, pointer, input, slider };
 }
