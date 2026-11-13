@@ -90,13 +90,19 @@ public static partial class BibCanvas
         {
             runtime.ConsumeFrame();
             var frame = window.Frame;
-            float width = frame.Width / frame.Scale;
+            // A slider's thumb is centred on its value, so at either end half of it lies past the
+            // track. bibmd's page leaves room for it; here the canvas is the note's column, and
+            // Live Preview clips its code blocks to that (contain: paint), so the block is inset by
+            // half a thumb on each side instead.
+            float inset = runtime.Theme.Slider.ThumbSize / 2f;
+            float width = frame.Width / frame.Scale - 2f * inset;
             runtime.BeginBuild(frame, window.Events);
             // A fitted box is capped by the room its parent gives it, so the block is laid out in
             // a root far taller than any block, and measured as the column that fits it.
             var root = runtime.BeginParent(runtime.Column());
-            root.SizeX = SemanticSize.Pixels(width);
+            root.SizeX = SemanticSize.Pixels(width + 2f * inset);
             root.SizeY = SemanticSize.Pixels(100_000f);
+            root.Style.Padding = EdgeInsets.Symmetric(horizontal: inset, vertical: 0f);
             var column = runtime.BeginParent(runtime.Column());
             column.SizeX = SemanticSize.Pixels(width);
             // A note edited since the last frame is a new program, which keeps the reader's values.
