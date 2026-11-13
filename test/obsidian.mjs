@@ -81,7 +81,7 @@ while (args.length) {
       break;
     }
     case "reload":
-      await evaluate(`(async () => { await app.plugins.disablePlugin("bib-blocks"); await app.plugins.enablePlugin("bib-blocks"); })()`);
+      await evaluate(`(async () => { await app.plugins.disablePlugin("bibmd"); await app.plugins.enablePlugin("bibmd"); })()`);
       break;
     case "reload-app": {
       await send("Page.reload", { ignoreCache: true });

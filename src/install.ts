@@ -10,7 +10,7 @@ declare const BIBMD_WASM_SHA256: string;
 // Where to fetch it from instead of the release: set only in a test build (BIBMD_WASM_URL=…).
 declare const BIBMD_WASM_URL: string;
 
-const REPO = "relu24/obsidian-bib-blocks";
+const REPO = "relu24/obsidian-bibmd";
 const ASSET = "bibmd-wasm.zip";
 
 let installing: Promise<void> | null = null;
@@ -32,7 +32,7 @@ async function install(app: App, manifest: PluginManifest) {
   if (!BIBMD_WASM_SHA256) return;
   if (await fs.exists(marker) && (await fs.read(marker)).trim() === want) return;
 
-  const notice = new Notice("bib blocks: fetching bibmd (about 3 MB)…", 0);
+  const notice = new Notice("bibmd: fetching what it runs on (about 3 MB)…", 0);
   try {
     const url = BIBMD_WASM_URL || `https://github.com/${REPO}/releases/download/${manifest.version}/${ASSET}`;
     const zip = (await requestUrl({ url })).arrayBuffer;

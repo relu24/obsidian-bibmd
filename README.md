@@ -1,4 +1,4 @@
-# bib blocks
+# bibmd for Obsidian
 
 An Obsidian plugin that draws fenced `bib` blocks live, with [bibmd](https://github.com/relu24/bibmd)
 itself: each block is a canvas that bibmd's own renderer draws with
@@ -34,7 +34,7 @@ Desktop only.
 The plugin's own files are small; bibmd and the .NET runtime it runs on are not (about 7 MB).
 The first time a note with a `bib` block is opened, the plugin fetches `bibmd-wasm.zip` (3.0 MB)
 from this repository's release for its version, checks it against the SHA-256 the plugin was
-built with, and unpacks it into its folder (`.obsidian/plugins/bib-blocks/`). A file that does
+built with, and unpacks it into its folder (`.obsidian/plugins/bibmd/`). A file that does
 not match is refused. Nothing else is fetched, and nothing is sent anywhere.
 
 On Linux the plugin reads the note's font files through fontconfig (`fc-match`), so the blocks
@@ -62,7 +62,7 @@ The build is deterministic: the same sources give the same zip, so a release's
 browser it is.
 
 To try a build in a vault without a release, `./install.sh <vault>` copies the plugin and the
-.NET app into `<vault>/.obsidian/plugins/bib-blocks/`.
+.NET app into `<vault>/.obsidian/plugins/bibmd/`.
 
 ## How it works
 

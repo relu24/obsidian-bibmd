@@ -1,11 +1,11 @@
 #!/bin/sh
 # Copies the built plugin into a vault: ./install.sh <vault>
 # (npm run build and npm run wasm first). Obsidian picks it up after a restart, or after
-# Settings → Community plugins → reload; turn on "bib blocks" there the first time.
+# Settings → Community plugins → reload; turn on "bibmd" there the first time.
 set -e
 vault="${1:?usage: ./install.sh <vault folder>}"
 here="$(cd "$(dirname "$0")" && pwd)"
-dest="$vault/.obsidian/plugins/bib-blocks"
+dest="$vault/.obsidian/plugins/bibmd"
 for f in main.js manifest.json styles.css wasm/out/wwwroot/_framework/dotnet.js; do
   [ -e "$here/$f" ] || { echo "missing $f: run npm run build and npm run wasm first" >&2; exit 1; }
 done
