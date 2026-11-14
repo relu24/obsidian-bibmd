@@ -1,7 +1,7 @@
 {
   "id": "bibmd",
   "name": "bibmd",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "minAppVersion": "1.5.0",
   "description": "Draws fenced bib blocks live: small programs over the note's data, shown as sliders, choices, cards, tables and charts.",
   "author": "Daniel Madsen",

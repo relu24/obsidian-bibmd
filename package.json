@@ -1,6 +1,6 @@
 {
   "name": "obsidian-bibmd",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "bibmd's bib blocks in Obsidian: each block drawn by bibmd itself, with bibui on .NET WebAssembly.",
   "type": "module",
   "private": true,
