@@ -27,6 +27,7 @@
   <ItemGroup>
     <Compile Include="$(BibmdSource)Bib.cs" Link="bibmd/Bib.cs" />
     <Compile Include="$(BibmdSource)Blocks.cs" Link="bibmd/Blocks.cs" />
+    <Compile Include="$(BibmdSource)Charts.cs" Link="bibmd/Charts.cs" />
     <Compile Include="$(BibmdSource)Document.cs" Link="bibmd/Document.cs" />
     <Compile Include="$(BibmdSource)Fences.cs" Link="bibmd/Fences.cs" />
     <Compile Include="$(BibmdSource)Text.cs" Link="bibmd/Text.cs" />
