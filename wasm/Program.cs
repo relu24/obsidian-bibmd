@@ -81,6 +81,7 @@ public static partial class BibCanvas
         // What a reader does in any block of the note is drawn by all of them.
         n.Program.Changed += place.Wake;
         var managed = new ManagedRenderer(window.Cpu);
+        Bib.Saver = (name, text) => { Download(name, text); return $"Downloaded {name}."; };
         var bib = new Bib(runtime, n.Program);
         float shown = -1f;
         CursorShape? cursor = null;
@@ -109,6 +110,10 @@ public static partial class BibCanvas
             bib.Prepare(place.Note.Doc, 1);
             int index = BlockIndex(place.Note.Doc, place.Block);
             if (index < 0 || !bib.View(index, width)) runtime.Text("No such bib block");
+            // The keys a block asks for (key(), a button's key:) are the note's, while its canvas has them.
+            if (!bib.HasFocus)
+                foreach (var ev in runtime.UnconsumedEvents)
+                    if (ev.IsKeyDown && bib.Key(ev)) ev.Eat();
             runtime.EndParent(column);
             runtime.EndParent(root);
             runtime.EndBuild();
@@ -276,4 +281,7 @@ public static partial class BibCanvas
 
     [JSImport("globalThis.bibCanvas.drawn")]
     private static partial void Drawn(JSObject canvas);
+
+    [JSImport("globalThis.bibCanvas.download")]
+    private static partial void Download(string name, string text);
 }

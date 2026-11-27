@@ -138,9 +138,11 @@ while (args.length) {
     }
     case "key": {
       const key = args.shift();
-      const code = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, ArrowDown: 40, ArrowUp: 38, ArrowLeft: 37, ArrowRight: 39 }[key] ?? 0;
+      const code = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, ArrowDown: 40, ArrowUp: 38, ArrowLeft: 37, ArrowRight: 39, Space: 32 }[key] ?? 0;
+      // The physical key as well, as a keyboard sends it: bibui reads code, not key.
+      const physical = key === "Space" ? "Space" : /^[a-z]$/i.test(key) ? `Key${key.toUpperCase()}` : /^[0-9]$/.test(key) ? `Digit${key}` : key;
       for (const type of ["rawKeyDown", "keyUp"])
-        await send("Input.dispatchKeyEvent", { type, key, windowsVirtualKeyCode: code, ...(key === "Enter" && type === "rawKeyDown" ? { text: "\r" } : {}) });
+        await send("Input.dispatchKeyEvent", { type, key: key === "Space" ? " " : key, code: physical, windowsVirtualKeyCode: code, ...(key === "Enter" && type === "rawKeyDown" ? { text: "\r" } : {}) });
       break;
     }
     case "cursor": {

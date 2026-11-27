@@ -22,6 +22,14 @@ let loading: Promise<Bibmd> | null = null;
 (window as unknown as { bibCanvas: unknown }).bibCanvas = {
   height(canvas: HTMLCanvasElement, px: number) { canvas.style.height = `${px}px`; },
   drawn() {},
+  // A note's download(): Obsidian saves it as any download (a save dialog on the desktop).
+  download(name: string, text: string) {
+    const a = createEl("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    a.download = name;
+    a.click();
+    window.setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  },
 };
 
 // A copy of a file's bytes as an ArrayBuffer of its own, for Blob and Response.
