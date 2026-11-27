@@ -1,5 +1,5 @@
 {
-  "bibmd": { "repo": "https://github.com/relu24/bibmd", "commit": "8a1b8211ec342ae835c38701682c55e9aca8396b" },
-  "bibdoc": { "repo": "https://github.com/relu24/bibdoc", "commit": "81de835c177ca4365c8e31912ce8a06716249cad" },
-  "bibui": { "repo": "https://github.com/relu24/bibui", "commit": "d681c5d829af5992eff5628476660e57885fc79f" }
+  "bibmd": { "repo": "https://github.com/relu24/bibmd", "commit": "39f70b7cf8df4ede83f6b5e527841a3dd3641ba3" },
+  "bibdoc": { "repo": "https://github.com/relu24/bibdoc", "commit": "0615e11b35decbf3376a7bcbdb224a3fe7a1bbfa" },
+  "bibui": { "repo": "https://github.com/relu24/bibui", "commit": "eada988e0550d43562c25e72b3aa82bff73184c8" }
 }

@@ -32,6 +32,19 @@ const packs = join(process.env.DOTNET_ROOT ?? join(homedir(), ".dotnet"), "packs
 const pack = join(packs, readdirSync(packs).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).pop());
 licenses["dotnet-LICENSE.txt"] = join(pack, "LICENSE.TXT");
 licenses["dotnet-THIRD-PARTY-NOTICES.txt"] = join(pack, "THIRD-PARTY-NOTICES.TXT");
+// The emoji face and the symbol fonts bibmd's web viewer uses for what the note's font lacks.
+const fonts = {
+  "fonts/Twemoji.Mozilla.ttf": "wasm/sources/fonts/Twemoji.Mozilla.ttf",
+  "fonts/NotoSansMath-Symbols.ttf": "wasm/sources/bibmd/web/fonts/NotoSansMath-Symbols.ttf",
+  "fonts/NotoSansSymbols2-Symbols.ttf": "wasm/sources/bibmd/web/fonts/NotoSansSymbols2-Symbols.ttf",
+};
+for (const [name, path] of Object.entries(fonts)) files[name] = [readFileSync(path), { mtime: new Date(2000, 0, 1) }];
+licenses["Noto-OFL.txt"] = "wasm/sources/bibmd/web/fonts/OFL.txt";
+files["licenses/Twemoji.txt"] = [new TextEncoder().encode(
+  "Twemoji.Mozilla.ttf (https://github.com/mozilla/twemoji-colr, v0.7.0):\n" +
+  "the art is Copyright Twitter, Inc and other contributors, licensed under CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/);\n" +
+  "the font is Copyright Mozilla Foundation, licensed under the Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0).\n"),
+  { mtime: new Date(2000, 0, 1) }];
 for (const [name, path] of Object.entries(licenses)) files[`licenses/${name}`] = [readFileSync(path), { mtime: new Date(2000, 0, 1) }];
 if (!files["_framework/dotnet.js"]) throw new Error("no wasm/out: run npm run wasm first");
 const zip = zipSync(files, { level: 9 });

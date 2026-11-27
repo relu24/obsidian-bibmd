@@ -14,6 +14,8 @@ interface Bibmd {
   Show(id: number, block: number): void;
   Close(id: number): void;
   Font(family: string, base64: string): void;
+  Emoji(font: Uint8Array): void;
+  Fallback(font: Uint8Array): void;
 }
 
 let loading: Promise<Bibmd> | null = null;
@@ -53,6 +55,10 @@ function load(): Promise<Bibmd> {
     const exports = await runtime.getAssemblyExports("bibwasm.dll") as { BibMd: { BibCanvas: Bibmd } };
     const bibmd = exports.BibMd.BibCanvas;
     await bibmd.Preload(moduleUrl("_content/Bibui.Platform.Browser/bibui-browser.js"));
+    // The emoji face and the symbol fonts packed with the plugin: nothing is downloaded.
+    if (files["fonts/Twemoji.Mozilla.ttf"]) bibmd.Emoji(files["fonts/Twemoji.Mozilla.ttf"]);
+    for (const name of ["fonts/NotoSansMath-Symbols.ttf", "fonts/NotoSansSymbols2-Symbols.ttf"])
+      if (files[name]) bibmd.Fallback(files[name]);
     return bibmd;
   })();
   return loading;

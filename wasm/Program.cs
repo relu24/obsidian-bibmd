@@ -60,6 +60,27 @@ public static partial class BibCanvas
     public static void Font(string family, string base64) =>
         FontRegistry.Register(family, Convert.FromBase64String(base64));
 
+    private static byte[]? _emoji;
+
+    /// <summary>
+    /// The emoji face (Twemoji, packed with the plugin): every canvas sets an emoji in it, the
+    /// ones open now and the ones opened after.
+    /// </summary>
+    [JSExport]
+    public static void Emoji(byte[] font)
+    {
+        _emoji = font;
+        foreach (var place in Places.Values)
+        {
+            place.Runtime.Fonts.UseClusterFont(new Bibui.Text.FreeType.FontData(font, "Twemoji"));
+            place.Runtime.RequestFrame();
+        }
+    }
+
+    /// <summary>A font for the characters the note's font and the emoji face lack (an arrow, a math sign).</summary>
+    [JSExport]
+    public static void Fallback(byte[] font) => FontRegistry.RegisterFallback(font);
+
     /// <summary>
     /// Draws the <paramref name="block"/>-th bib block of the note at <paramref name="note"/> (its
     /// path in the vault) on <paramref name="canvas"/>, until it is closed. Every canvas of a note
@@ -72,6 +93,7 @@ public static partial class BibCanvas
         int id = _next++;
         var n = NoteFor(note, text);
         var runtime = BibuiRuntime.Create();
+        if (_emoji is not null) runtime.Fonts.UseClusterFont(new Bibui.Text.FreeType.FontData(_emoji, "Twemoji"));
         runtime.SetTheme(HostTheme(theme, out bool pointer));
         var window = await BrowserWindow.OpenAsync(canvas);
         runtime.WakeUp = window.Wake;
@@ -107,7 +129,7 @@ public static partial class BibCanvas
             var column = runtime.BeginParent(runtime.Column());
             column.SizeX = SemanticSize.Pixels(width);
             // A note edited since the last frame is a new program, which keeps the reader's values.
-            bib.Prepare(place.Note.Doc, 1);
+            bib.Prepare(place.Note.Doc, 1, width);
             int index = BlockIndex(place.Note.Doc, place.Block);
             if (index < 0 || !bib.View(index, width)) runtime.Text("No such bib block");
             // The keys a block asks for (key(), a button's key:) are the note's, while its canvas has them.
